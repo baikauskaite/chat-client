@@ -17,18 +17,17 @@ class Controller:
             print("Your username should consist of 2-20 alphanumeric characters.")
             username = input("Please choose a username: ")
         # TODO: Change the string below in the brackets to a ClientMessage object
-        self.interact_with_server("HELLO-FROM " + username)
+        self.interact_with_server("HELLO-FROM " + username + "\n")
 
     # Send client message and receive server message, continue the interaction with user according to server response
     def interact_with_server(self, message):
         self.send_client_message(message)
         code = self.receive_server_message()
         # Calls a function corresponding to the code
-        function = self.processes[code]
-        if function is not None:
-            function()
+        if code in self.processes:
+            self.processes[code]()
         else:
-            print("This code is not yet implemented")
+            print("This code is not yet implemented.")
 
     # Refer to the class ServerMessage to see what each number refers to
     processes = {
