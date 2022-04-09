@@ -51,8 +51,7 @@ class ServerMessage:
     # Match heading with a function to process the message's body
     # TODO: else case, when there's no matching heading in headings
     def match_heading(self) -> int:
-        function = self.headings[self.head]
-        if function is not None:
-            return function(self)
+        if self.head in self.headings:
+            self.headings[self.head](self)
         else:
-            pass
+            print("This code is not yet implemented.")
