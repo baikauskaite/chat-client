@@ -10,6 +10,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST_NAME, PORT_NUMBER))
 
 controller = Controller(s)
+controller.help()
 controller.login()
 
 s.close()
