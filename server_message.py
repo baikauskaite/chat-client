@@ -37,17 +37,17 @@ class ServerMessage:
 
     def send_ok(self) -> int:
         print("The message has been sent successfully.")
-        return 2
+        return 1
 
     def unknown(self) -> int:
         print("This user is currently not logged in.")
-        return -3
+        return 1
 
     def delivery(self) -> int:
         username = self.body.pop(0)
         message = self.body
         print([username] + [": "] + message)
-        return 2
+        return 1
 
     def in_use(self) -> int:
         print("This username is already in use.")
