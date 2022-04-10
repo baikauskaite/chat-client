@@ -12,18 +12,26 @@ class Controller:
         self.socket = socket
 
     # User manual that is displayed in the beginning and when called by writing '!help'
-    @staticmethod
-    def help():
+    def help(self):
         print("""
         @username message - to send a message to a user.        
-        !who              - list all users that are currently logged in.
+        !who              - to list all users that are currently logged in.
         !quit             - to shutdown the client.
-        !help             - to display the manual
+        !help             - to display the user manual
         """)
 
     user_commands = {
+        "!who": lambda x: print("This code is not yet implemented."),
+        "!quit": lambda x: print("This code is not yet implemented."),
         "!help": help
     }
+
+    # TODO: Add case for '@username message'
+    def parse_user_input(self):
+        user_input = input()
+        while user_input not in self.user_commands:
+            user_input = input("There's no such command.")
+        return self.user_commands[user_input](self)
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self):
@@ -37,7 +45,9 @@ class Controller:
     # Refer to the class ServerMessage to see what each number refers to
     # Negative numbers indicate some kind of failure, positive indicate a successful process
     processes = {
-        -1: login
+        -2: lambda x: print("This code is not yet implemented."),
+        -1: login,
+        1: parse_user_input
     }
 
     # Send client message and receive server message, continue the interaction with user according to server response
@@ -47,7 +57,7 @@ class Controller:
         code = server_message.code
         # Calls a function corresponding to the code
         if code in self.processes:
-            self.processes[code]()
+            self.processes[code](self)
         else:
             print("This code is not yet implemented.")
 
