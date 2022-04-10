@@ -41,18 +41,3 @@ class Controller:
     def send_client_message(self, message):
         message_bytes = message.encode()
         self.socket.sendall(message_bytes)
-
-    # Encode a message and send it to the server
-    def send_client_message(self, message):
-        message_bytes = message.encode()
-        self.socket.sendall(message_bytes)
-
-    # Receive a message from the server and determine what kind of message it is
-    def receive_server_message(self) -> int:
-        # Receive bytes from server and decode it
-        buffer_str = self.socket.recv(self.BUFFER_SIZE)
-        decoded_str = buffer_str.decode()
-        # Parse the server message and respond accordingly
-        server_message = ServerMessage(decoded_str)
-        code = server_message.match_heading()
-        return code
