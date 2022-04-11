@@ -12,7 +12,6 @@ class Controller:
     def __init__(self, socket):
         self.socket = socket
         self.client = ClientMessage(socket)
-        self.server = ServerMessage(socket)
 
     # User manual that is displayed in the beginning and when called by writing '!help'
     def help(self) -> None:
@@ -23,17 +22,29 @@ class Controller:
         !help             - to display the user manual
         """)
 
-    user_commands = {
-        "!who": lambda x: print("This code is not yet implemented."),
-        "!quit": quit_program(),
-        "!help": help()
-    }
+    # it wouldn't let me do self.server in the dictionary
+    def return_users(self) -> None:
+        self.client.who()
+        server = ServerMessage(self.socket)
+        server.who_ok()
+        #self.interact_with_server(2)
+        code = server.code
+        if code in self.processes:
+            self.processes[code](self)
+        else:
+            print("This should not get called.")
 
     # tells user program is quitting and quits
     def quit_program(self) -> None:
         self.socket.close()
         print("Quitting program.")
         quit()
+
+    user_commands = {
+        "!who": return_users,
+        "!quit": quit_program,
+        "!help": help
+    }
 
     # parses what the user enters and begins the appropriate process
     # TODO: Add case for '@username message'
@@ -52,7 +63,16 @@ class Controller:
         while not re.match(self.USERNAME_REGEX, username):
             print("Your username should consist of 2-20 alphanumeric characters.")
             username = input("Please choose a username: ")
-        self.interact_with_server(self.client.first_handshake(username))
+        self.client.first_handshake(username)
+        server = ServerMessage(self.socket)
+        server.second_handshake()
+        code = server.code
+        if code in self.processes:
+            self.processes[code](self)
+        else:
+            print("This should not get called.")
+        # self.interact_with_server(1)
+        # self.client.first_handshake(username)
 
     # Refer to the class ServerMessage to see what each number refers to
     # Negative numbers indicate some kind of failure, positive indicate a successful process
@@ -65,14 +85,24 @@ class Controller:
         1: parse_user_input
     }
 
+    """
     # Send client message and receive server message, continue the interaction with user according to server response
     # second parameter is a client method
-    def interact_with_server(self, clientMethodToRun):
-        clientMethodToRun()
-        server_message = ServerMessage(self.socket)
-        code = server_message.code
+    def interact_with_server(self, code_client_method_to_run):
+        if code_client_method_to_run in self.client_method_to_run:
+            self.client_method_to_run[code_client_method_to_run](self)
+        else:
+            print("This should not get called.")
+        server = ServerMessage(socket)
+        code = server.code
         # Calls a function corresponding to the code
         if code in self.processes:
             self.processes[code](self)
         else:
             print("This should not get called.")
+
+    client_method_to_run = {
+        1: self.client.first_handshake(username),
+        2: self.server.who_ok()
+    }
+    """

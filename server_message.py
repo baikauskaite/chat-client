@@ -8,6 +8,7 @@ class ServerMessage:
         self.socket = socket
         self.head = None
         self.body = None
+        # code defines the next action for the controller to take
         self.code = self.receive_server_message()
 
     # Receive a message from the server and determine what kind of message it is
@@ -40,9 +41,13 @@ class ServerMessage:
         return 1
 
     def unknown(self) -> int:
-        print("This user is currently not logged in.")
+        print("The user you're trying to message is currently not logged in.")
         return 1
 
+    # TODO: I'm thinking the parsing and printing of the message should take place in the controller, since
+    # server_message shouldn't care about formatting anything?
+    # that would impact the whole return int code though
+    # let's just get it to work fully first, then maybe refactor things
     def delivery(self) -> int:
         username = self.body.pop(0)
         message = self.body
@@ -57,6 +62,22 @@ class ServerMessage:
         print("The maximum number of users are currently using the chat.")
         return -2
 
+    def who_ok(self) -> int:
+        list_of_names = self.body # .split()
+        print("Users currently online:\n")
+        for name in list_of_names:
+            print(name + "\n")
+        return 1
+
+    # TODO: maybe have this throw an exception, since the user shouldn't be worried about headers
+    def bad_rqst_hdr(self) -> int:
+        print("Error in request header, please try again.")
+        return 1
+
+    def bad_rqst_body(self) -> int:
+        print("Error in message body, please try again.")
+        return 1
+
     # Pairs of headings and functions to process the body for the matching heading
     headings = {
         "HELLO": second_handshake,
@@ -64,7 +85,10 @@ class ServerMessage:
         "UNKNOWN": unknown,
         "DELIVERY": delivery,
         "IN-USE": in_use,
-        "BUSY": busy
+        "BUSY": busy,
+        "WHO-OK": who_ok,
+        "BAD-RQST-HDR": bad_rqst_hdr,
+        "BAD-RQST-BODY": bad_rqst_body
     }
 
     # Match heading with a function to process the message's body
