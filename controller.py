@@ -1,16 +1,33 @@
 import re
+import sys
+
 from server_message import *
 from client_message import *
+import threading
+
 
 class Controller:
     """Interaction with the user, has a socket for sending and receiving messages from the server."""
 
     # Allows only 2-20 alphanumeric characters in username
     USERNAME_REGEX = "^[a-zA-Z0-9]{2,20}$"
+    BUFFER_SIZE = 2048
 
     def __init__(self, socket):
         self.socket = socket
         self.client = ClientMessage(socket)
+        self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
+        self.server_messages_thread.daemon = True
+
+    def run_chat(self):
+        # TODO: The printing of !help in the beginning of program can be done here
+        # TODO: Think of a way what to do if the user fails to log in (because BUSY or IN-USE)
+        while not self.login():
+            pass
+        # Only start the thread for receiving server messages when the user has logged in
+        # Do not continue to these lines until the user has logged in
+        self.server_messages_thread.start()
+        self.parse_user_input()
 
     # User manual that is displayed in the beginning and when called by writing '!help'
     def help(self) -> None:
@@ -20,18 +37,17 @@ class Controller:
         !quit             - to shutdown the client.
         !help             - to display the user manual
         """)
-        self.parse_user_input()
 
     # returns a list of all users online when user types "!who"
     def return_users(self) -> None:
         self.client.who()
-        # self.process_server_response()
 
     # tells user program is quitting and quits when user types "!quit"
     def quit_program(self) -> None:
         self.socket.close()
         print("Quitting program.")
-        quit()
+        # TODO: Think of a better way to kill the thread before exiting
+        sys.exit()
 
     user_commands = {
         "!who": return_users,
@@ -57,33 +73,35 @@ class Controller:
                     message = user_and_message_list[1]
                     self.client.send_message(username_no_at, message)
                     # TODO: program currently dies if username isn't recognized
-                    # self.process_server_response()
                 elif user_input in self.user_commands:
                     recognized_command_entered = True
                     self.user_commands[user_input](self)
                 else:
                     user_input = input("There's no such command. Enter '!help' to see a list of valid commands.\n")
+        self.quit_program()
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self) -> bool:
         # have client select appropriate username
-        username = input("Please choose a username: ")
-        while not re.match(self.USERNAME_REGEX, username):
-            print("Your username should consist of 2-20 alphanumeric characters.")
-            username = input("Please choose a username: ")
+        username = self.get_username()
         # once username valid, connect to server with it
         self.client.first_handshake(username)
         # response will either be that username is taken, server is busy, login was successful, or bad request
-        buffer_str = self.socket.recv(2046)
-        decoded_str = buffer_str.decode()
-        server = ServerMessage(self.socket, decoded_str)
+        code = self.get_server_message()
         """ processing pauses when process_server_response is called so this doesn't work rn
         print(success)
         if success == 1:
             self.help()
         """
-        return server.code == 1
+        return code == 1
 
+    # Prompts the user to select a username and repeats the process until the username is good
+    def get_username(self) -> str:
+        username = input("Please choose a username: ")
+        while not re.match(self.USERNAME_REGEX, username):
+            print("Your username should consist of 2-20 alphanumeric characters.")
+            username = input("Please choose a username: ")
+        return username
 
     # Refer to the class ServerMessage to see what each number refers to
     # Negative numbers indicate some kind of failure, positive indicate a successful process
@@ -96,20 +114,13 @@ class Controller:
         1: parse_user_input
     }
 
-    def getting_server_message(self, s):
-        while (True):
-            buffer_str = s.recv(2046)
-            if buffer_str:
-                decoded_str = buffer_str.decode()
-                self.process_server_response(decoded_str)
+    def run_get_server_message(self):
+        while True:
+            self.get_server_message()
 
-    def process_server_response(self, message) -> int:
-        server = ServerMessage(self.socket, message)
-        # code = server.code
-        # Calls a function corresponding to the code
-        # if code in self.processes:
-        #     self.processes[code](self)
-        #     return code
-        # else:
-        #     print("This should not get called.")
-        #     return -5
+    def get_server_message(self):
+        byte_str = self.socket.recv(self.BUFFER_SIZE)
+        if byte_str:
+            server_message = ServerMessage(byte_str)
+            code = server_message.code
+            return code
