@@ -67,18 +67,23 @@ class Controller:
             while not recognized_command_entered:
                 if user_input[0] == "@":
                     recognized_command_entered = True
-                    user_and_message_list = user_input.split(' ', 1)
-                    username = user_and_message_list[0]
-                    username_no_at = username[1:]
-                    message = user_and_message_list[1]
-                    self.client.send_message(username_no_at, message)
+                    username_and_message = self.get_username_and_message(user_input)
+                    self.client.send_message(*username_and_message)
                     # TODO: program currently dies if username isn't recognized
                 elif user_input in self.user_commands:
                     recognized_command_entered = True
                     self.user_commands[user_input](self)
                 else:
                     user_input = input("There's no such command. Enter '!help' to see a list of valid commands.\n")
+
         self.quit_program()
+
+    def get_username_and_message(self, user_input):
+        user_and_message_list = user_input.split(' ', 1)
+        username = user_and_message_list[0]
+        username_no_at = username[1:]
+        message = user_and_message_list[1]
+        return (username_no_at, message)
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self) -> bool:
@@ -102,17 +107,6 @@ class Controller:
             print("Your username should consist of 2-20 alphanumeric characters.")
             username = input("Please choose a username: ")
         return username
-
-    # Refer to the class ServerMessage to see what each number refers to
-    # Negative numbers indicate some kind of failure, positive indicate a successful process
-    processes = {
-        # too many clients in server, cannot use now
-        -2: quit_program,
-        # username taken, login again
-        -1: login,
-        # successful command, user enter another command
-        1: parse_user_input
-    }
 
     def run_get_server_message(self):
         while True:
