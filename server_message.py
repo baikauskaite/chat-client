@@ -53,8 +53,8 @@ class ServerMessage:
     # let's just get it to work fully first, then maybe refactor things
     def delivery(self) -> int:
         username = self.body.pop(0)
-        message = self.body
-        print([username] + [": "] + message)
+        message = " ".join(self.body)
+        print(username + ": " + message)
         return 1
 
     def in_use(self) -> int:
