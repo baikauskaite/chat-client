@@ -1,5 +1,6 @@
 import os
 import socket
+import threading
 from controller import *
 
 BUFFER_SIZE = 2048
@@ -12,4 +13,8 @@ s.connect((HOST_NAME, PORT_NUMBER))
 controller = Controller(s)
 # moving to login so that the user only knows how to interact if they successfully logged in
 # controller.help()
-controller.login()
+is_success = controller.login()
+if is_success:
+    t = threading.Thread(target=controller.getting_server_message, args=(s,))
+    t.start()
+    controller.parse_user_input()

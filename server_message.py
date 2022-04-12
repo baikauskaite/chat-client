@@ -4,23 +4,22 @@ class ServerMessage:
     BUFFER_SIZE = 2048
 
     # Splitting the message into a heading and a body
-    def __init__(self, socket):
+    def __init__(self, socket, message):
         self.socket = socket
         self.head = None
         # a list of inputs
         self.body = None
         # code defines the next action for the controller to take
-        self.code = self.receive_server_message()
+        self.code = self.receive_server_message(message)
 
     # Receive a message from the server and determine what kind of message it is
-    def receive_server_message(self) -> int:
+    def receive_server_message(self, message) -> int:
         # Receive bytes from server and decode it
-        buffer_str = self.socket.recv(self.BUFFER_SIZE)
-        decoded_str = buffer_str.decode()
+        # buffer_str = self.socket.recv(self.BUFFER_SIZE)
+        # decoded_str = buffer_str.decode()
         # Parse the server message and respond accordingly
-        self.split_message(decoded_str)
+        self.split_message(message)
         # adding this line for debugging purposes
-        print(decoded_str)
         code = self.match_heading()
         return code
 

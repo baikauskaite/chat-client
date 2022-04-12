@@ -2,7 +2,6 @@ import re
 from server_message import *
 from client_message import *
 
-
 class Controller:
     """Interaction with the user, has a socket for sending and receiving messages from the server."""
 
@@ -26,7 +25,7 @@ class Controller:
     # returns a list of all users online when user types "!who"
     def return_users(self) -> None:
         self.client.who()
-        self.process_server_response()
+        # self.process_server_response()
 
     # tells user program is quitting and quits when user types "!quit"
     def quit_program(self) -> None:
@@ -42,29 +41,31 @@ class Controller:
 
     # parses what the user enters and begins the appropriate process
     def parse_user_input(self):
-        # String user_input
-        user_input = input()
-        # boolean flag for loop
-        recognized_command_entered = False
+        user_input = None
+        while user_input != "!quit":
+            # String user_input
+            user_input = input()
+            # boolean flag for loop
+            recognized_command_entered = False
 
-        while not recognized_command_entered:
-            if user_input[0] == "@":
-                recognized_command_entered = True
-                user_and_message_list = user_input.split(' ', 1)
-                username = user_and_message_list[0]
-                username_no_at = username[1:]
-                message = user_and_message_list[1]
-                self.client.send_message(username_no_at, message)
-                # TODO: program currently dies if username isn't recognized
-                self.process_server_response()
-            elif user_input in self.user_commands:
-                recognized_command_entered = True
-                self.user_commands[user_input](self)
-            else:
-                user_input = input("There's no such command. Enter '!help' to see a list of valid commands.\n")
+            while not recognized_command_entered:
+                if user_input[0] == "@":
+                    recognized_command_entered = True
+                    user_and_message_list = user_input.split(' ', 1)
+                    username = user_and_message_list[0]
+                    username_no_at = username[1:]
+                    message = user_and_message_list[1]
+                    self.client.send_message(username_no_at, message)
+                    # TODO: program currently dies if username isn't recognized
+                    # self.process_server_response()
+                elif user_input in self.user_commands:
+                    recognized_command_entered = True
+                    self.user_commands[user_input](self)
+                else:
+                    user_input = input("There's no such command. Enter '!help' to see a list of valid commands.\n")
 
     # Prompts the user to select a username and initiates handshake with server
-    def login(self) -> None:
+    def login(self) -> bool:
         # have client select appropriate username
         username = input("Please choose a username: ")
         while not re.match(self.USERNAME_REGEX, username):
@@ -73,12 +74,16 @@ class Controller:
         # once username valid, connect to server with it
         self.client.first_handshake(username)
         # response will either be that username is taken, server is busy, login was successful, or bad request
-        success = self.process_server_response()
+        buffer_str = self.socket.recv(2046)
+        decoded_str = buffer_str.decode()
+        server = ServerMessage(self.socket, decoded_str)
         """ processing pauses when process_server_response is called so this doesn't work rn
         print(success)
         if success == 1:
             self.help()
         """
+        return server.code == 1
+
 
     # Refer to the class ServerMessage to see what each number refers to
     # Negative numbers indicate some kind of failure, positive indicate a successful process
@@ -91,13 +96,20 @@ class Controller:
         1: parse_user_input
     }
 
-    def process_server_response(self) -> int:
-        server = ServerMessage(self.socket)
-        code = server.code
+    def getting_server_message(self, s):
+        while (True):
+            buffer_str = s.recv(2046)
+            if buffer_str:
+                decoded_str = buffer_str.decode()
+                self.process_server_response(decoded_str)
+
+    def process_server_response(self, message) -> int:
+        server = ServerMessage(self.socket, message)
+        # code = server.code
         # Calls a function corresponding to the code
-        if code in self.processes:
-            self.processes[code](self)
-            return code
-        else:
-            print("This should not get called.")
-            return -5
+        # if code in self.processes:
+        #     self.processes[code](self)
+        #     return code
+        # else:
+        #     print("This should not get called.")
+        #     return -5
