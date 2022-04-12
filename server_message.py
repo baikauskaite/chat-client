@@ -7,6 +7,7 @@ class ServerMessage:
     def __init__(self, socket):
         self.socket = socket
         self.head = None
+        # a list of inputs
         self.body = None
         # code defines the next action for the controller to take
         self.code = self.receive_server_message()
@@ -18,6 +19,8 @@ class ServerMessage:
         decoded_str = buffer_str.decode()
         # Parse the server message and respond accordingly
         self.split_message(decoded_str)
+        # adding this line for debugging purposes
+        print(decoded_str)
         code = self.match_heading()
         return code
 
@@ -33,7 +36,7 @@ class ServerMessage:
     # Returns a code which can be used by the controller to determine that there was no failure in the process
     def second_handshake(self) -> int:
         username = self.body[0]
-        print("You have successfully logged in, " + username + ".")
+        print("You have successfully logged in, " + username + ". Enter '!help' to see a list of accepted commands.")
         return 1
 
     def send_ok(self) -> int:
@@ -63,20 +66,18 @@ class ServerMessage:
         return -2
 
     def who_ok(self) -> int:
-        list_of_names = self.body # .split()
-        print("Users currently online:\n")
-        for name in list_of_names:
-            print(name + "\n")
+        print("Users currently online:")
+        print(self.body[0])
         return 1
 
     # TODO: maybe have this throw an exception, since the user shouldn't be worried about headers
     def bad_rqst_hdr(self) -> int:
         print("Error in request header, please try again.")
-        return 1
+        return -2
 
     def bad_rqst_body(self) -> int:
         print("Error in message body, please try again.")
-        return 1
+        return -2
 
     # Pairs of headings and functions to process the body for the matching heading
     headings = {
@@ -98,4 +99,4 @@ class ServerMessage:
             return self.headings[self.head](self)
         else:
             print("This code is not yet implemented.")
-            return 0
+            return -1
