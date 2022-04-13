@@ -1,26 +1,20 @@
 class ServerMessage:
     """Server message is split to head and body. The body can then processed according to the heading."""
 
-    BUFFER_SIZE = 2048
-
     # Splitting the message into a heading and a body
-    def __init__(self, socket):
-        self.socket = socket
+    def __init__(self, byte_str):
         self.head = None
         # a list of inputs
         self.body = None
         # code defines the next action for the controller to take
-        self.code = self.receive_server_message()
+        self.code = self.process_server_message(byte_str)
 
-    # Receive a message from the server and determine what kind of message it is
-    def receive_server_message(self) -> int:
-        # Receive bytes from server and decode it
-        buffer_str = self.socket.recv(self.BUFFER_SIZE)
-        decoded_str = buffer_str.decode()
-        # Parse the server message and respond accordingly
+    # Decode and split the server message from the server and determine what kind of message it is
+    def process_server_message(self, byte_str) -> int:
+        # Decode bytes received from the server
+        decoded_str = byte_str.decode()
+        # Parse the server message
         self.split_message(decoded_str)
-        # adding this line for debugging purposes
-        print(decoded_str)
         code = self.match_heading()
         return code
 
@@ -53,8 +47,8 @@ class ServerMessage:
     # let's just get it to work fully first, then maybe refactor things
     def delivery(self) -> int:
         username = self.body.pop(0)
-        message = self.body
-        print([username] + [": "] + message)
+        message = " ".join(self.body)
+        print(username + ": " + message)
         return 1
 
     def in_use(self) -> int:

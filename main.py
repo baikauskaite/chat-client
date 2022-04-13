@@ -1,5 +1,6 @@
 import os
 import socket
+import threading
 from controller import *
 
 BUFFER_SIZE = 2048
@@ -10,6 +11,5 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST_NAME, PORT_NUMBER))
 
 controller = Controller(s)
-# moving to login so that the user only knows how to interact if they successfully logged in
-# controller.help()
-controller.login()
+# This function is responsible for the whole flow of the chat
+controller.run_chat()
