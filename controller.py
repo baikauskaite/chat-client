@@ -1,5 +1,6 @@
 import re
 import sys
+import socket
 
 from server_message import *
 from client_message import *
@@ -13,18 +14,35 @@ class Controller:
     USERNAME_REGEX = "^[a-zA-Z0-9]{2,20}$"
     BUFFER_SIZE = 2048
 
-    def __init__(self, socket):
-        self.socket = socket
-        self.client = ClientMessage(socket)
+    def __init__(self, host_name, port_number):
+        self.host_name = host_name
+        self.port_number = port_number
+
+        self.socket = None
+        self.client = None
+        self.__initialize_socket()
+
         # Initializes a thread which runs run_get_server_message
         self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
+
+    def __initialize_socket(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.host_name, self.port_number))
+        self.socket = s
+        self.client = ClientMessage(self.socket)
 
     # Responsible for the whole flow of the chat
     def run_chat(self):
         # TODO: The printing of !help in the beginning of program can be done here
         # TODO: Think of a way what to do if the user fails to log in (because BUSY or IN-USE)
-        while not self.login():
-            pass
+        login_successful = self.login() # this is an int
+        while not login_successful == 1:
+            if login_successful == -1:
+                self.socket.close()
+                self.__initialize_socket()
+                login_successful = self.login()
+            elif login_successful == -2:
+                self.quit_program()
         # Only start the thread for receiving server messages when the user has logged in
         # Do not continue to these lines until the user has logged in
         self.server_messages_thread.start()
@@ -91,19 +109,14 @@ class Controller:
         return (username_no_at, message)
 
     # Prompts the user to select a username and initiates handshake with server
-    def login(self) -> bool:
+    def login(self) -> int:
         # have client select appropriate username
         username = self.get_username()
         # once username valid, connect to server with it
         self.client.first_handshake(username)
         # response will either be that username is taken, server is busy, login was successful, or bad request
         code = self.get_server_message()
-        """ processing pauses when process_server_response is called so this doesn't work rn
-        print(success)
-        if success == 1:
-            self.help()
-        """
-        return code == 1
+        return code
 
     # Prompts the user to select a username and repeats the process until the username is good
     def get_username(self) -> str:
