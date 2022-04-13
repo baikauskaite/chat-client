@@ -122,9 +122,7 @@ class Controller:
                 # Catches the exception created by trying to recv from a closed socket
                 break
             if byte_str:
-                server_message = ServerMessage(byte_str)
-                code = server_message.code
-                return code
+                ServerMessage(byte_str)
 
     # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
