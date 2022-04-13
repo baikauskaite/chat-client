@@ -9,7 +9,7 @@ class ServerMessage:
         # code defines the next action for the controller to take
         self.code = self.process_server_message(byte_str)
 
-    # Receive a message from the server and determine what kind of message it is
+    # Decode and split the server message from the server and determine what kind of message it is
     def process_server_message(self, byte_str) -> int:
         # Decode bytes received from the server
         decoded_str = byte_str.decode()

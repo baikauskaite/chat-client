@@ -16,9 +16,12 @@ class Controller:
     def __init__(self, socket):
         self.socket = socket
         self.client = ClientMessage(socket)
+        # Initializes a thread which runs run_get_server_message
         self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
+        # Temporary solution for killing the thread "properly" (not really properly here)
         self.server_messages_thread.daemon = True
 
+    # Responsible for the whole flow of the chat
     def run_chat(self):
         # TODO: The printing of !help in the beginning of program can be done here
         # TODO: Think of a way what to do if the user fails to log in (because BUSY or IN-USE)
@@ -27,7 +30,9 @@ class Controller:
         # Only start the thread for receiving server messages when the user has logged in
         # Do not continue to these lines until the user has logged in
         self.server_messages_thread.start()
+        # This function finishes running when user types in "quit!"
         self.parse_user_input()
+        self.quit_program()
 
     # User manual that is displayed in the beginning and when called by writing '!help'
     def help(self) -> None:
@@ -58,6 +63,7 @@ class Controller:
     # parses what the user enters and begins the appropriate process
     def parse_user_input(self):
         user_input = None
+
         while user_input != "!quit":
             # String user_input
             user_input = input()
@@ -68,6 +74,7 @@ class Controller:
                 if user_input[0] == "@":
                     recognized_command_entered = True
                     username_and_message = self.get_username_and_message(user_input)
+                    # The star in the brackets is meant to upack the tuple of (username, message)
                     self.client.send_message(*username_and_message)
                     # TODO: program currently dies if username isn't recognized
                 elif user_input in self.user_commands:
@@ -76,8 +83,7 @@ class Controller:
                 else:
                     user_input = input("There's no such command. Enter '!help' to see a list of valid commands.\n")
 
-        self.quit_program()
-
+    # Extracts the username and message from the input and returns them in a tuple (username, message)
     def get_username_and_message(self, user_input):
         user_and_message_list = user_input.split(' ', 1)
         username = user_and_message_list[0]
@@ -108,10 +114,12 @@ class Controller:
             username = input("Please choose a username: ")
         return username
 
+    # Infinitely runs get_server_message()
     def run_get_server_message(self):
         while True:
             self.get_server_message()
 
+    # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
         byte_str = self.socket.recv(self.BUFFER_SIZE)
         if byte_str:
