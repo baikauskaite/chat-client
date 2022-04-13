@@ -1,7 +1,5 @@
 import re
-import sys
 import socket
-
 from server_message import *
 from client_message import *
 import threading
@@ -115,12 +113,12 @@ class Controller:
             username = input("Please choose a username: ")
         return username
 
-    # Infinitely runs get_server_message()
+    # Infinitely receives and processes server messages
     def run_get_server_message(self):
         while True:
             try:
                 byte_str = self.socket.recv(self.BUFFER_SIZE)
-            except Exception:
+            except OSError:
                 # Catches the exception created by trying to recv from a closed socket
                 break
             if byte_str:

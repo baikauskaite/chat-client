@@ -1,6 +1,4 @@
 import os
-import socket
-import threading
 from controller import *
 
 BUFFER_SIZE = 2048

@@ -54,13 +54,12 @@ class ServerMessage:
         print(self.body[0])
         return 1
 
-    # TODO: maybe have this throw an exception, since the user shouldn't be worried about headers
     def bad_rqst_hdr(self) -> int:
-        print("Error in request header, please try again.")
+        print("There was a problem. Please resubmit your command.")
         return -2
 
     def bad_rqst_body(self) -> int:
-        print("Error in message body, please try again.")
+        print("There was a problem. Please resubmit your command.")
         return -2
 
     # Pairs of headings and functions to process the body for the matching heading
@@ -77,10 +76,5 @@ class ServerMessage:
     }
 
     # Match heading with a function to process the message's body
-    # TODO: else case, when there's no matching heading in headings
     def match_heading(self) -> int:
-        if self.head in self.headings:
-            return self.headings[self.head](self)
-        else:
-            print("This code is not yet implemented.")
-            return -1
+        return self.headings[self.head](self)

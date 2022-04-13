@@ -7,7 +7,7 @@ class ClientMessage:
     # Private helper for sending messages
     def __send_message_to_server(self, text) -> None:
         message = text + "\n"
-        message_bytes = message.encode("utf-8")
+        message_bytes = message.encode()
         self.socket.sendall(message_bytes)
 
     # Initiates a handshake with the server from the given user
