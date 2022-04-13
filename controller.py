@@ -43,6 +43,7 @@ class Controller:
                 login_successful = self.login()
             elif login_successful == -2:
                 self.quit_program()
+        self.help()
         # Only start the thread for receiving server messages when the user has logged in
         # Do not continue to these lines until the user has logged in
         self.server_messages_thread.start()

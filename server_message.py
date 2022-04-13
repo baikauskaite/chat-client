@@ -30,7 +30,7 @@ class ServerMessage:
     # Returns a code which can be used by the controller to determine that there was no failure in the process
     def second_handshake(self) -> int:
         username = self.body[0]
-        print("You have successfully logged in, " + username + ". Enter '!help' to see a list of accepted commands.")
+        print("You have successfully logged in, " + username)
         return 1
 
     def send_ok(self) -> int:
