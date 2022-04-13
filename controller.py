@@ -18,8 +18,6 @@ class Controller:
         self.client = ClientMessage(socket)
         # Initializes a thread which runs run_get_server_message
         self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
-        # Temporary solution for killing the thread "properly" (not really properly here)
-        self.server_messages_thread.daemon = True
 
     # Responsible for the whole flow of the chat
     def run_chat(self):
@@ -49,10 +47,11 @@ class Controller:
 
     # tells user program is quitting and quits when user types "!quit"
     def quit_program(self) -> None:
+        # Closing the socket before killing the thread to raise an exception in run_get_server_message
         self.socket.close()
+        self.server_messages_thread.join()
         print("Quitting program.")
-        # TODO: Think of a better way to kill the thread before exiting
-        sys.exit()
+        quit()
 
     user_commands = {
         "!who": return_users,
@@ -117,7 +116,15 @@ class Controller:
     # Infinitely runs get_server_message()
     def run_get_server_message(self):
         while True:
-            self.get_server_message()
+            try:
+                byte_str = self.socket.recv(self.BUFFER_SIZE)
+            except Exception:
+                # Catches the exception created by trying to recv from a closed socket
+                break
+            if byte_str:
+                server_message = ServerMessage(byte_str)
+                code = server_message.code
+                return code
 
     # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
