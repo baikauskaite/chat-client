@@ -22,7 +22,6 @@ class Controller:
         self.client = None
         self.__initialize_socket()
 
-        # Initializes a thread which runs run_get_server_message
         self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
 
     def __initialize_socket(self):
@@ -33,9 +32,7 @@ class Controller:
 
     # Responsible for the whole flow of the chat
     def run_chat(self):
-        # TODO: The printing of !help in the beginning of program can be done here
-        # TODO: Think of a way what to do if the user fails to log in (because BUSY or IN-USE)
-        login_successful = self.login() # this is an int
+        login_successful = self.login()
         while not login_successful == 1:
             if login_successful == -1:
                 self.socket.close()
@@ -45,9 +42,7 @@ class Controller:
                 self.quit_program()
         self.help()
         # Only start the thread for receiving server messages when the user has logged in
-        # Do not continue to these lines until the user has logged in
         self.server_messages_thread.start()
-        # This function finishes running when user types in "quit!"
         self.parse_user_input()
         self.quit_program()
 
@@ -60,11 +55,11 @@ class Controller:
         !help             - to display the user manual
         """)
 
-    # returns a list of all users online when user types "!who"
+    # Returns a list of all users online when user types "!who"
     def return_users(self) -> None:
         self.client.who()
 
-    # tells user program is quitting and quits when user types "!quit"
+    # Tells user program is quitting and quits when user types "!quit"
     def quit_program(self) -> None:
         # Closing the socket before killing the thread to raise an exception in run_get_server_message
         self.socket.close()
@@ -78,23 +73,19 @@ class Controller:
         "!help": help
     }
 
-    # parses what the user enters and begins the appropriate process
+    # Parses what the user enters and begins the appropriate process
     def parse_user_input(self):
         user_input = None
 
         while user_input != "!quit":
-            # String user_input
             user_input = input()
-            # boolean flag for loop
             recognized_command_entered = False
 
             while not recognized_command_entered:
                 if user_input[0] == "@":
                     recognized_command_entered = True
                     username_and_message = self.get_username_and_message(user_input)
-                    # The star in the brackets is meant to upack the tuple of (username, message)
                     self.client.send_message(*username_and_message)
-                    # TODO: program currently dies if username isn't recognized
                 elif user_input in self.user_commands:
                     recognized_command_entered = True
                     self.user_commands[user_input](self)
@@ -111,11 +102,8 @@ class Controller:
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self) -> int:
-        # have client select appropriate username
         username = self.get_username()
-        # once username valid, connect to server with it
         self.client.first_handshake(username)
-        # response will either be that username is taken, server is busy, login was successful, or bad request
         code = self.get_server_message()
         return code
 
