@@ -55,12 +55,12 @@ class ServerMessage:
         return 1
 
     def bad_rqst_hdr(self) -> int:
-        print("There was a problem. Please resubmit your command.")
-        return -2
+        print("Internal error. Please resubmit your command.")
+        return 1
 
     def bad_rqst_body(self) -> int:
-        print("There was a problem. Please resubmit your command.")
-        return -2
+        print("Internal error. Please resubmit your command.")
+        return 1
 
     # Pairs of headings and functions to process the body for the matching heading
     headings = {
