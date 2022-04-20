@@ -129,19 +129,22 @@ class Controller:
             try:
                 byte_str = self.socket.recv(self.BUFFER_SIZE)
             except OSError:
-                # Catches the exception created by trying to recv from a closed socket
                 break
-                # print("Server timed out. Please relaunch server.")
-                # self.server_messages_thread.join()
-                # print("Quitting program.")
-                # quit()
             if byte_str:
                 ServerMessage(byte_str)
 
     # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
-        byte_str = self.socket.recv(self.BUFFER_SIZE)
-        if byte_str:
-            server_message = ServerMessage(byte_str)
-            code = server_message.code
-            return code
+        try:
+            byte_str = self.socket.recv(self.BUFFER_SIZE)
+            if byte_str:
+                server_message = ServerMessage(byte_str)
+                code = server_message.code
+                return code
+            else:
+                print("Connection timed out. Please relaunch the program.")
+                quit()
+        except OSError:
+            print("Connection timed out. Please relaunch the program.")
+            quit()
+
