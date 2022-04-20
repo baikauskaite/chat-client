@@ -8,7 +8,12 @@ class ClientMessage:
     def __send_message_to_server(self, text) -> None:
         message = text + "\n"
         message_bytes = message.encode()
-        self.socket.sendall(message_bytes)
+        try:
+            self.socket.sendall(message_bytes)
+        except OSError:
+            print("Server timed out. Please relaunch server.")
+            print("Quitting program.")
+            quit()
 
     # Initiates a handshake with the server from the given user
     def first_handshake(self, username) -> None:

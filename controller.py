@@ -80,10 +80,14 @@ class Controller:
             recognized_command_entered = False
 
             while not recognized_command_entered:
-                if user_input[0] == "@":
+                user_input = user_input.strip()
+                if len(user_input) == 0:
+                    user_input = input("Please enter a command.\n")
+                elif user_input[0] == "@":
                     recognized_command_entered = True
                     username_and_message = self.get_username_and_message(user_input)
-                    self.client.send_message(*username_and_message)
+                    if username_and_message is not None:
+                        self.client.send_message(*username_and_message)
                 elif user_input in self.user_commands:
                     recognized_command_entered = True
                     self.user_commands[user_input](self)
@@ -93,10 +97,16 @@ class Controller:
     # Extracts the username and message from the input and returns them in a tuple (username, message)
     def get_username_and_message(self, user_input):
         user_and_message_list = user_input.split(' ', 1)
+        if len(user_and_message_list) == 1:
+            print("You cannot send an empty message.")
+            return None
         username = user_and_message_list[0]
         username_no_at = username[1:]
-        message = user_and_message_list[1]
-        return (username_no_at, message)
+        message = user_and_message_list[1].strip()
+        if len(message) == 0:
+            print("You cannot send an empty message.")
+            return None
+        return username_no_at, message
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self) -> int:
@@ -121,6 +131,10 @@ class Controller:
             except OSError:
                 # Catches the exception created by trying to recv from a closed socket
                 break
+                # print("Server timed out. Please relaunch server.")
+                # self.server_messages_thread.join()
+                # print("Quitting program.")
+                # quit()
             if byte_str:
                 ServerMessage(byte_str)
 
