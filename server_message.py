@@ -51,7 +51,9 @@ class ServerMessage:
 
     def who_ok(self) -> int:
         print("Users currently online:")
-        print(self.body[0])
+        usernames = self.body[0].split(",")
+        for user in usernames:
+            print(user)
         return 1
 
     def bad_rqst_hdr(self) -> int:
