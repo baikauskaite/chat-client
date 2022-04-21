@@ -11,7 +11,7 @@ class ClientMessage:
         try:
             self.socket.sendall(message_bytes)
         except OSError:
-            print("Server timed out. Please relaunch server.")
+            print("Connection timed out. Please relaunch the program.")
             print("Quitting program.")
             quit()
 
