@@ -127,7 +127,7 @@ class Controller:
     def run_get_server_message(self):
         while True:
             try:
-                byte_str = self.socket.recv(self.BUFFER_SIZE)
+                byte_str = self.get_server_message_helper()
             except OSError:
                 break
             if byte_str:
@@ -136,7 +136,7 @@ class Controller:
     # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
         try:
-            byte_str = self.socket.recv(self.BUFFER_SIZE)
+            byte_str = self.get_server_message_helper()
             if byte_str:
                 server_message = ServerMessage(byte_str)
                 code = server_message.code
@@ -148,3 +148,12 @@ class Controller:
             print("Connection timed out. Please relaunch the program.")
             quit()
 
+    # Helper function for endlessly receiving bytes from server until newline
+    def get_server_message_helper(self) -> bytes:
+        byte_str = b''
+        while True:
+            part = self.socket.recv(self.BUFFER_SIZE)
+            byte_str += part
+            message = part.decode()
+            if '\n' in message:
+                return byte_str
