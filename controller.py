@@ -1,7 +1,5 @@
 import re
-import sys
 import socket
-
 from server_message import *
 from client_message import *
 import threading
@@ -22,7 +20,6 @@ class Controller:
         self.client = None
         self.__initialize_socket()
 
-        # Initializes a thread which runs run_get_server_message
         self.server_messages_thread = threading.Thread(target=self.run_get_server_message, args=())
 
     def __initialize_socket(self):
@@ -33,9 +30,7 @@ class Controller:
 
     # Responsible for the whole flow of the chat
     def run_chat(self):
-        # TODO: The printing of !help in the beginning of program can be done here
-        # TODO: Think of a way what to do if the user fails to log in (because BUSY or IN-USE)
-        login_successful = self.login() # this is an int
+        login_successful = self.login()
         while not login_successful == 1:
             if login_successful == -1:
                 self.socket.close()
@@ -45,9 +40,7 @@ class Controller:
                 self.quit_program()
         self.help()
         # Only start the thread for receiving server messages when the user has logged in
-        # Do not continue to these lines until the user has logged in
         self.server_messages_thread.start()
-        # This function finishes running when user types in "quit!"
         self.parse_user_input()
         self.quit_program()
 
@@ -60,11 +53,11 @@ class Controller:
         !help             - to display the user manual
         """)
 
-    # returns a list of all users online when user types "!who"
+    # Returns a list of all users online when user types "!who"
     def return_users(self) -> None:
         self.client.who()
 
-    # tells user program is quitting and quits when user types "!quit"
+    # Tells user program is quitting and quits when user types "!quit"
     def quit_program(self) -> None:
         # Closing the socket before killing the thread to raise an exception in run_get_server_message
         self.socket.close()
@@ -78,23 +71,23 @@ class Controller:
         "!help": help
     }
 
-    # parses what the user enters and begins the appropriate process
+    # Parses what the user enters and begins the appropriate process
     def parse_user_input(self):
         user_input = None
 
         while user_input != "!quit":
-            # String user_input
             user_input = input()
-            # boolean flag for loop
             recognized_command_entered = False
 
             while not recognized_command_entered:
-                if user_input[0] == "@":
+                user_input = user_input.strip()
+                if len(user_input) == 0:
+                    user_input = input("Please enter a command.\n")
+                elif user_input[0] == "@":
                     recognized_command_entered = True
                     username_and_message = self.get_username_and_message(user_input)
-                    # The star in the brackets is meant to upack the tuple of (username, message)
-                    self.client.send_message(*username_and_message)
-                    # TODO: program currently dies if username isn't recognized
+                    if username_and_message is not None:
+                        self.client.send_message(*username_and_message)
                 elif user_input in self.user_commands:
                     recognized_command_entered = True
                     self.user_commands[user_input](self)
@@ -104,18 +97,21 @@ class Controller:
     # Extracts the username and message from the input and returns them in a tuple (username, message)
     def get_username_and_message(self, user_input):
         user_and_message_list = user_input.split(' ', 1)
+        if len(user_and_message_list) == 1:
+            print("You cannot send an empty message.")
+            return None
         username = user_and_message_list[0]
         username_no_at = username[1:]
-        message = user_and_message_list[1]
-        return (username_no_at, message)
+        message = user_and_message_list[1].strip()
+        if len(message) == 0:
+            print("You cannot send an empty message.")
+            return None
+        return username_no_at, message
 
     # Prompts the user to select a username and initiates handshake with server
     def login(self) -> int:
-        # have client select appropriate username
         username = self.get_username()
-        # once username valid, connect to server with it
         self.client.first_handshake(username)
-        # response will either be that username is taken, server is busy, login was successful, or bad request
         code = self.get_server_message()
         return code
 
@@ -127,21 +123,37 @@ class Controller:
             username = input("Please choose a username: ")
         return username
 
-    # Infinitely runs get_server_message()
+    # Infinitely receives and processes server messages
     def run_get_server_message(self):
         while True:
             try:
-                byte_str = self.socket.recv(self.BUFFER_SIZE)
-            except Exception:
-                # Catches the exception created by trying to recv from a closed socket
+                byte_str = self.get_server_message_helper()
+            except OSError:
                 break
             if byte_str:
                 ServerMessage(byte_str)
 
     # Gets message from server and returns the code for success or error after processing the server message
     def get_server_message(self):
-        byte_str = self.socket.recv(self.BUFFER_SIZE)
-        if byte_str:
-            server_message = ServerMessage(byte_str)
-            code = server_message.code
-            return code
+        try:
+            byte_str = self.get_server_message_helper()
+            if byte_str:
+                server_message = ServerMessage(byte_str)
+                code = server_message.code
+                return code
+            else:
+                print("Connection timed out. Please relaunch the program.")
+                quit()
+        except OSError:
+            print("Connection timed out. Please relaunch the program.")
+            quit()
+
+    # Helper function for endlessly receiving bytes from server until newline
+    def get_server_message_helper(self) -> bytes:
+        byte_str = b''
+        while True:
+            part = self.socket.recv(self.BUFFER_SIZE)
+            byte_str += part
+            message = part.decode()
+            if '\n' in message:
+                return byte_str
